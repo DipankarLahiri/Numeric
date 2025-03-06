@@ -1,0 +1,60 @@
+---
+title: "Numeric"
+author: "Dipankar Lahiri"
+date: "2025-03-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library (dplyr)
+library (readr)
+library (ggplot2)
+
+my_df <- read_csv ('life-under-lockdown-wave2-extract.csv')
+
+knowledge_levels <- c('Nothing at all', 'Not very much', 'A fair amount', 'A great deal')
+
+my_df <- my_df %>%
+  mutate(
+    know_facebook = know_facebook %>%
+      ordered(
+        levels = knowledge_levels
+      )
+  )
+```
+
+``` {r visualise age}
+
+my_df %>%
+  ggplot (
+    aes (x=age)
+  ) +
+  geom_histogram(binwidth = 5)
+```
+
+```{r visualise gender}
+
+my_df %>%
+  ggplot (
+    aes(x = gender)
+  ) +
+  geom_bar()
+
+```
+```{r - visualise facebook}
+
+my_df %>%
+  ggplot (
+    aes(x=know_facebook)
+  ) +
+  geom_bar()
+
+```
+``` {r}
+my_df %>%
+  ggplot(
+    aes(x=beliefs)
+  ) + geom_histogram(binwidth = 1)
+```
