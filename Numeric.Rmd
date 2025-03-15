@@ -1,5 +1,5 @@
 ---
-title: "Numeric"
+title: "Age, gender and misinformation"
 author: "Dipankar Lahiri"
 date: "2025-03-06"
 output: html_document
@@ -11,8 +11,54 @@ knitr::opts_chunk$set(echo = TRUE)
 library (dplyr)
 library (readr)
 library (ggplot2)
+library(moments)
 
 my_df <- read_csv ('life-under-lockdown-wave2-extract.csv')
+
+```
+
+# This is an analysis of a random sample dataframe of 500 individuals sourced from the Life Under Lockdown project on the basis of four variables - Age (ratio data), Gender (nominal data), Knowledge about coronavirus through Facebook (ordinal data), and Number of misinformation beliefs (ratio data).  
+
+``` {r visualise age}
+
+summary(my_df$age) 
+sd(my_df$age, na.rm = TRUE)
+skewness(my_df$age, na.rm = TRUE)
+kurtosis(my_df$age, na.rm = TRUE)
+
+ggplot(my_df, aes(x = age)) + 
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "black") +
+  theme_minimal()
+
+ggplot(my_df, aes(x = age)) + 
+  geom_density(fill = "steelblue", alpha = 0.3) +
+  theme_minimal()
+
+```
+
+# The ages in our sample range from 16 to 75, with a mean age of 44.57 and a median age of 44, indicating a nearly symmetrical distribution. The standard deviation (16.43) suggests a moderate spread of ages around the mean. A skewness of 0.02 confirms the distribution is almost symmetric, while a kurtosis of 1.77 suggests a platykurtic shape — a flatter distribution with fewer extreme outliers than a normal distribution. A density plot shows that individuals in their 20s and 50s are the most represented age groups.
+
+```{r visualise gender}
+
+my_df %>%
+  count(gender) %>%
+  mutate(percentage = n / sum(n) * 100)
+
+my_df %>%
+  ggplot(aes(x = gender, fill = gender)) +
+  geom_bar() +
+  scale_fill_manual(values = c("Male" = "steelblue", "Female" = "black", "In another way" = "gray50")) +
+  theme_minimal() +
+  labs(title = "Gender Distribution", x = "Gender", y = "Count", fill = "Gender")
+
+ggplot(my_df, aes(x = age, fill = gender)) + 
+  geom_density(alpha = 0.3) +
+  theme_minimal()
+```
+
+# There are 247 females (49.4%), 251 males (50.2%) and 2 people who identify in another way (0.4%) in our sample. A density plot shows that women outnumber men in the 20-40 age range in our sample, while men outnumber women in the 40-50 and 60+ age ranges.
+
+```{r visualise facebook}
 
 knowledge_levels <- c('Nothing at all', 'Not very much', 'A fair amount', 'A great deal')
 
@@ -23,58 +69,120 @@ my_df <- my_df %>%
         levels = knowledge_levels
       )
   )
-```
-
-``` {r visualise age}
 
 my_df %>%
-  ggplot (
-    aes (x=age)
-  ) +
-  geom_histogram(binwidth = 5)
-```
+  count(know_facebook) %>%
+  mutate(percentage = n / sum(n) * 100)
 
-```{r visualise gender}
+median(as.numeric(my_df$know_facebook), na.rm = TRUE)
 
-my_df %>%
-  ggplot (
-    aes(x = gender)
-  ) +
-  geom_bar()
-
-```
-```{r - visualise facebook}
+ggplot(my_df, aes(x = know_facebook, fill = know_facebook)) +  
+  geom_bar() +
+  scale_fill_brewer(palette = "Blues") +  
+  theme_minimal() +  
+  labs(x = "Reliance on Facebook for COVID-19 Knowledge", y = "Count")  
 
 my_df %>%
-  ggplot (
-    aes(x=know_facebook)
-  ) +
-  geom_bar()
+  group_by(gender, know_facebook) %>%
+  summarise(n = n()) %>%
+  mutate(percentage = n / sum(n) * 100)
 
-```
-``` {r}
+ggplot(my_df, aes(x = know_facebook, y = age)) +  
+  geom_boxplot(fill = "lightblue") +  
+  theme_minimal() +  
+  labs(x = "Reliance on Facebook", y = "Age")
+
 my_df %>%
-  ggplot(
-    aes(x=beliefs)
-  ) + geom_histogram(binwidth = 1)
+  group_by(know_facebook) %>%
+  summarise(median_age = median(age, na.rm = TRUE))
+
+my_df <- my_df %>%
+  mutate(age_group = cut(age, 
+                         breaks = c(16, 25, 35, 45, 55, 65, 76), 
+                         labels = c("16-24", "25-34", "35-44", "45-54", "55-64", "65-75"),
+                         right = FALSE))
+
+ggplot(my_df, aes(x = age_group, fill = know_facebook)) +
+  geom_bar(position = "fill") + 
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_manual(values = c("lightblue", "blue", "darkblue", "navy")) +
+  theme_minimal() +
+  labs(x = "Age Group", y = "Proportion", fill = "Reliance on Facebook",
+       title = "Reliance on Facebook for COVID-19 Information by Age Group")
+
+correlation <- cor(as.numeric(my_df$know_facebook), my_df$age, method = "spearman", use = "complete.obs")
+correlation
+
 ```
 
-# Gender vs beliefs
+# In our sample, 49.6% of respondents got none of their coronavirus information from Facebook, 29.6% got not much, 14.6% got a fair amount, and 6.2% got a great deal. The median response was ‘Not very much,’ indicating that most people relied only minimally on Facebook for information.While gender had no significant effect, age showed a strong inverse relationship with reliance on Facebook. The median age was 53.5 for those who got no information, 41.5 for those who got little, 35 for those who got a fair amount, and 30 for those who got a great deal. The Spearman's rank correlation (-0.302) confirms this negative association — younger individuals were more likely to rely on Facebook for coronavirus information.  
+
+``` {r visualise beliefs}
+
+summary(my_df$beliefs)
+sd(my_df$beliefs, na.rm = TRUE)
+skewness(my_df$beliefs, na.rm = TRUE)
+kurtosis(my_df$beliefs, na.rm = TRUE)
+
+my_df %>%
+  count(beliefs) %>%
+  mutate(percentage = n / sum(n) * 100)
+
+ggplot(my_df, aes(x = beliefs)) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  theme_minimal() +
+  labs(x = "Belief Score", y = "Count", title = "Distribution of Belief Scores")
+
+cor.test(my_df$beliefs, my_df$age, method = "spearman")
+cor.test(my_df$beliefs, as.numeric(my_df$know_facebook), method = "spearman")
+
+```
+
+# The belief scores are highly right-skewed (skewness = 2.02) and peaked (kurtosis = 6.99), indicating most respondents rejected most statements, with a few endorsing multiple. Since the skewness is greater than 0, the distribution has a long tail on the right, meaning a small number of people have high belief scores while most people have low scores (close to 0). The median score is 0, and the mean (0.67) is slightly higher, suggesting a concentration of low scores with some extreme values at the higher end. A proportion distribution of belief scores shows 308 people (61.6%) rejected all five statements, 116 people (23.2%) rejected most but endorsed one, 38 people (7.6%) endorsed two statements, 18 people (3.6%) endorsed three, 12 people (2.4%) endorsed four, and 8 people (1.6%) endorsed all five statements. Spearman's rank correlation test shows that younger individuals tend to have higher belief scores, as shown by the weak negative correlation with age (rho = -0.19, p < 0.001). Reliance on Facebook for coronavirus information is positively correlated with belief scores (rho = 0.23, p < 0.001), meaning those who rely more on Facebook tend to believe more statements. Both correlations are statistically significant, but their effects are moderate.
 
 ``` {r gender vs beliefs}
 
 my_df %>%
   group_by(gender) %>%
   summarise (n = n(), M = mean (beliefs), Mdn = median (beliefs), SD = sd (beliefs))
-```
 
-``` {r gender-vs-beliefs-test}
 my_df %>%
   filter(gender == "Male" | gender == "Female") %>%
   t.test(
     beliefs ~ gender,
     data = .
   )
+
+my_df %>%
+  filter(gender == "Male" | gender == "Female") %>%
+  wilcox.test(
+    beliefs ~ gender,
+    data = .
+  )
 ```
 
-In the sample, men (M = 0.73, SD = 1.13) had more misinformation beliefs than women (M = 0.61, SD = 1.05). But this difference was not statistically significant, t(494.31) = -1.20, p = 0.230.
+# In the sample, men (M = 0.73, SD = 1.13) had more misinformation beliefs than women (M = 0.61, SD = 1.05). However, this difference was not statistically significant, as shown by both a Welch t-test, t(494.31) = -1.20, p = 0.230, and a Wilcoxon rank-sum test, W = 29,340, p = 0.234. This suggests that gender does not play a significant role in misinformation beliefs in this sample.
+
+``` {r age vs beliefs}
+
+ggplot(my_df, aes(x = age, y = beliefs)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  theme_minimal() +
+  labs(title = "Belief Scores vs. Age", x = "Age", y = "Belief Score")
+
+lm(beliefs ~ age * as.numeric(know_facebook), data = my_df) %>% summary()
+
+ggplot(my_df, aes(x = age, y = beliefs, color = as.factor(know_facebook))) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal() +
+  scale_color_brewer(palette = "Dark2") +
+  labs(title = "Interaction Effect of Age and Facebook Reliance on Misinformation Beliefs",
+       x = "Age",
+       y = "Misinformation Beliefs",
+       color = "Facebook Reliance")
+
+```
+
+# The regression results show that reliance on Facebook for COVID-19 information significantly predicts higher misinformation beliefs (β = 0.63, p < 0.001). However, the interaction between age and Facebook reliance is negative and significant (β = -0.0096, p = 0.005), meaning that the effect of Facebook reliance on misinformation beliefs weakens as age increases. An interaction plot (Figure X) illustrates this effect, showing that younger individuals who rely heavily on Facebook have the highest misinformation beliefs, while older individuals show minimal differences across reliance levels. The downward slope of the regression lines for higher Facebook reliance levels confirms that its impact diminishes with age.
