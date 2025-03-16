@@ -190,6 +190,12 @@ ggplot(my_df, aes(x = age, y = beliefs)) +
   theme_minimal() +
   labs(title = "Belief Scores vs. Age", x = "Age", y = "Belief Score")
 
+```
+
+# LINEAR REGRESSION - FINDING MISINFORMATION BELIEF'S ASSOCIATION WITH AGE & FACEBOOK RELIANCE
+
+``` {r}
+
 lm(beliefs ~ age * as.numeric(know_facebook), data = my_df) %>% summary()
 
 ggplot(my_df, aes(x = age, y = beliefs, color = as.factor(know_facebook))) +
@@ -204,4 +210,4 @@ ggplot(my_df, aes(x = age, y = beliefs, color = as.factor(know_facebook))) +
 
 ```
 
-# The regression results show that reliance on Facebook for COVID-19 information significantly predicts higher misinformation beliefs (β = 0.63, p < 0.001). However, the interaction between age and Facebook reliance is negative and significant (β = -0.0096, p = 0.005), meaning that the effect of Facebook reliance on misinformation beliefs weakens as age increases. An interaction plot (Figure X) illustrates this effect, showing that younger individuals who rely heavily on Facebook have the highest misinformation beliefs, while older individuals show minimal differences across reliance levels. The downward slope of the regression lines for higher Facebook reliance levels confirms that its impact diminishes with age.
+# The regression results show that reliance on Facebook for COVID-19 information significantly predicts higher misinformation beliefs (β = 0.63, p < 0.001). However, the interaction between age and Facebook reliance is negative and significant (β = -0.0096, p = 0.005), meaning that the effect of Facebook reliance on misinformation beliefs weakens as age increases. An interaction plot illustrates this effect, showing that younger individuals who rely heavily on Facebook have the highest misinformation beliefs, while older individuals show minimal differences across reliance levels. The downward slope of the regression lines for higher Facebook reliance levels confirms that its impact diminishes with age.
