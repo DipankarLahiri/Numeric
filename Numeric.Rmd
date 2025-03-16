@@ -22,8 +22,8 @@ my_df <- read_csv ('life-under-lockdown-wave2-extract.csv')
 # Main findings:
 # 1. Age shows a strong inverse relationship with reliance on Facebook, or younger individuals are more likely to rely on Facebook for coronavirus information. The median age was 53.5 for those who got no information, and 30 for those who got a great deal of information on coronavirus from FB.  
 # 2. Most people have low misinformation beliefs on coronavirus, while a small number of people have high misinformation beliefs. In our sample, 61.6% people rejected all misinformation statements, and 1.6% people endorsed all misinformation statements.
-# 3. Younger individuals tend to have higher misinformation beliefs. Those who rely more on Facebook also tend to have higher misinformation beliefs. Both correlations are statistically significant, but their effects are moderate.
-# 4. Men (M = 0.73, SD = 1.13) had more misinformation beliefs than women (M = 0.61, SD = 1.05) in this sample. However, this difference was not statistically significant.
+# 3. Men (M = 0.73, SD = 1.13) had more misinformation beliefs than women (M = 0.61, SD = 1.05) in this sample. However, this difference was not statistically significant.
+# 4. Younger individuals tend to have higher misinformation beliefs. Those who rely more on Facebook also tend to have higher misinformation beliefs. Both correlations are statistically significant, but their effects are moderate.
 # 5. Reliance on Facebook for coronavirus information significantly predicts higher misinformation beliefs (β = 0.63, p < 0.001). However, the interaction between age and Facebook reliance is negative and significant (β = -0.0096, p = 0.005), meaning that the effect of Facebook reliance on misinformation beliefs weakens as age increases. Younger individuals who rely heavily on Facebook have the highest misinformation beliefs, while older individuals show minimal differences across reliance levels. 
 
 # AGE
