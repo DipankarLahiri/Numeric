@@ -1,9 +1,20 @@
 ---
-title: "Age, gender and misinformation"
+title: "Social media reliance and misinformation beliefs"
 author: "Dipankar Lahiri"
 date: "2025-03-06"
 output: html_document
 ---
+
+# This is an analysis of a random sample dataframe of 500 individuals on the basis of four variables:
+# 1. Age (ratio data) - Participants were asked for their age at their last birthday.
+# 2. Gender (nominal data) - Participants were asked whether they identified as 'Male', 'Female', or 'In another way'.
+# 3. Knowledge about coronavirus through Facebook (ordinal data) - Answers to the question: 'Please tell us how much of what you know about coronavirus, if anything, comes from Facebook'. Answer options were: 'Nothing at all', 'Not very much', 'A fair amount', 'A great deal', and 'Don't know'. 
+# 4. Number of misinformation beliefs (ratio data) - Number of the following statements which the respondent considers true (options for each were 'True', 'False', and 'Don't know'):
+# i) Coronavirus was probably created in a laboratory					
+# ii) The symptoms that most people blame on coronavirus appear to be linked to 5G network radiation	
+# iii) There is no hard evidence that coronavirus really exists				
+# iv) The number of people reported as dying from coronavirus is being deliberately exaggerated by the authorities
+# v) The current pandemic is part of a global effort to force everyone to be vaccinated whether they want to or not 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -13,22 +24,26 @@ library (readr)
 library (ggplot2)
 library(moments)
 
+options(scipen = 999)
+
 my_df <- read_csv ('life-under-lockdown-wave2-extract.csv')
 
 ```
 
-# This is an analysis of a random sample dataframe of 500 individuals sourced from the Life Under Lockdown project on the basis of four variables - Age (ratio data), Gender (nominal data), Knowledge about coronavirus through Facebook (ordinal data), and Number of misinformation beliefs (ratio data).  
+# ---------------------------------------------------------------------------------
 
 # Main findings:
 # 1. Age shows a strong inverse relationship with reliance on Facebook, or younger individuals are more likely to rely on Facebook for coronavirus information. The median age was 53.5 for those who got no information, and 30 for those who got a great deal of information on coronavirus from FB.  
 # 2. Most people have low misinformation beliefs on coronavirus, while a small number of people have high misinformation beliefs. In our sample, 61.6% people rejected all misinformation statements, and 1.6% people endorsed all misinformation statements.
 # 3. Men (M = 0.73, SD = 1.13) had more misinformation beliefs than women (M = 0.61, SD = 1.05) in this sample. However, this difference was not statistically significant.
 # 4. Younger individuals tend to have higher misinformation beliefs. Those who rely more on Facebook also tend to have higher misinformation beliefs. Both correlations are statistically significant, but their effects are moderate.
-# 5. Reliance on Facebook for coronavirus information significantly predicts higher misinformation beliefs (β = 0.63, p < 0.001). However, the interaction between age and Facebook reliance is negative and significant (β = -0.0096, p = 0.005), meaning that the effect of Facebook reliance on misinformation beliefs weakens as age increases. Younger individuals who rely heavily on Facebook have the highest misinformation beliefs, while older individuals show minimal differences across reliance levels. 
+# 5. Linear Modelling: The regression model, Beliefs = 1.389 − 0.016 × Age, suggests that for each additional year of age, misinformation beliefs decrease by 0.016 on average. Women, on average, have 0.120 lower belief scores than men, but this difference is not statistically meaningful. The regression model, Beliefs = 0.520 + 0.711 × High_Facebook, suggests that individuals who rely more on Facebook have, on average, 0.711 higher belief scores than those with lower reliance. When all three predictors are included together, the model is: Beliefs = 1.219 - 0.013 × Age + 0.581 × High_Facebook - 0.168 × Female. The full model explains 10.9% of the variance in misinformation beliefs.
+
+# ---------------------------------------------------------------------------------
 
 # AGE
 
-``` {r visualise age}
+``` {r age analysis}
 
 summary(my_df$age) 
 sd(my_df$age, na.rm = TRUE)
@@ -64,7 +79,8 @@ my_df %>%
 
 ggplot(my_df, aes(x = age, fill = gender)) + 
   geom_density(alpha = 0.3) +
-  theme_minimal()
+  theme_minimal() +
+  labs(title = "Gender and Age Distribution", x = "Age", y = "Density", fill = "Gender")
 ```
 
 # There are 247 females (49.4%), 251 males (50.2%) and 2 people who identify in another way (0.4%) in our sample. A density plot shows that women outnumber men in the 20-40 age range in our sample, while men outnumber women in the 40-50 and 60+ age ranges.
@@ -93,13 +109,27 @@ ggplot(my_df, aes(x = know_facebook, fill = know_facebook)) +
   geom_bar() +
   scale_fill_brewer(palette = "Blues") +  
   theme_minimal() +  
-  labs(x = "Reliance on Facebook for COVID-19 Knowledge", y = "Count")  
+  labs(x = "Reliance on Facebook for COVID-19 Knowledge", y = "Count", fill = "Reliance on Facebook")  
 
+```
+
+# In our sample, 49.6% of respondents get none of their coronavirus information from Facebook, 29.6% get not much, 14.6% get a fair amount, and 6.2% get a great deal. The median response is ‘Not very much,’ indicating that most people rely only minimally on Facebook for information.
+
+# GENDER vs KNOWLEDGE FROM FACEBOOK
+
+```{r}
 my_df %>%
   group_by(gender, know_facebook) %>%
   summarise(n = n()) %>%
   mutate(percentage = n / sum(n) * 100)
 
+chisq.test(table(my_df$gender, my_df$know_facebook), simulate.p.value = TRUE)
+```
+# A Chi-square test of independence with Monte Carlo simulation (2000 replicates) was conducted to examine the relationship between gender and knowledge of Facebook. The test produced a χ²(NA) = 2.70, p = 0.841. The standard Chi-square approximation was not valid due to small expected frequencies, so a simulated p-value was used instead. The high p-value (p > 0.05) suggests that there is no statistically significant association between gender and knowledge of Facebook. The observed differences in counts are likely due to random variation rather than a meaningful relationship.
+
+# AGE vs KNOWLEDGE FROM FACEBOOK
+
+```{r}
 ggplot(my_df, aes(x = know_facebook, y = age)) +  
   geom_boxplot(fill = "lightblue") +  
   theme_minimal() +  
@@ -128,7 +158,7 @@ correlation
 
 ```
 
-# In our sample, 49.6% of respondents got none of their coronavirus information from Facebook, 29.6% got not much, 14.6% got a fair amount, and 6.2% got a great deal. The median response was ‘Not very much,’ indicating that most people relied only minimally on Facebook for information.While gender had no significant effect, age showed a strong inverse relationship with reliance on Facebook. The median age was 53.5 for those who got no information, 41.5 for those who got little, 35 for those who got a fair amount, and 30 for those who got a great deal. The Spearman's rank correlation (-0.302) confirms this negative association — younger individuals were more likely to rely on Facebook for coronavirus information. 
+# Age shows a strong inverse relationship with reliance on Facebook. The median age was 53.5 for those who got no information, 41.5 for those who got a little, 35 for those who got a fair amount, and 30 for those who got a great deal of information from FB. A Spearman's rank correlation coefficient of -0.302 confirms this negative association — younger individuals were more likely to rely on Facebook for coronavirus information. 
 
 # MISINFORMATION BELIEFS
 
@@ -148,20 +178,23 @@ ggplot(my_df, aes(x = beliefs)) +
   theme_minimal() +
   labs(x = "Belief Score", y = "Count", title = "Distribution of Belief Scores")
 
-cor.test(my_df$beliefs, my_df$age, method = "spearman")
-cor.test(my_df$beliefs, as.numeric(my_df$know_facebook), method = "spearman")
-
 ```
 
-# The belief scores are highly right-skewed (skewness = 2.02) and peaked (kurtosis = 6.99), indicating most respondents rejected most statements, with a few endorsing multiple. Since the skewness is greater than 0, the distribution has a long tail on the right, meaning a small number of people have high belief scores while most people have low scores (close to 0). The median score is 0, and the mean (0.67) is slightly higher, suggesting a concentration of low scores with some extreme values at the higher end. A proportion distribution of belief scores shows 308 people (61.6%) rejected all five statements, 116 people (23.2%) rejected most but endorsed one, 38 people (7.6%) endorsed two statements, 18 people (3.6%) endorsed three, 12 people (2.4%) endorsed four, and 8 people (1.6%) endorsed all five statements. Spearman's rank correlation test shows that younger individuals tend to have higher belief scores, as shown by the weak negative correlation with age (rho = -0.19, p < 0.001). Reliance on Facebook for coronavirus information is positively correlated with belief scores (rho = 0.23, p < 0.001), meaning those who rely more on Facebook tend to believe more statements. Both correlations are statistically significant, but their effects are moderate.
+# The belief scores are highly right-skewed (skewness = 2.02) and peaked (kurtosis = 6.99), indicating most respondents rejected most statements, with a few endorsing multiple. Since the skewness is greater than 0, the distribution has a long tail on the right, meaning a small number of people have high belief scores while most people have low scores (close to 0). The median score is 0, and the mean (0.67) is slightly higher, suggesting a concentration of low scores with some extreme values at the higher end. A proportion distribution of belief scores shows 308 people (61.6%) rejected all five statements, 116 people (23.2%) rejected most but endorsed one, 38 people (7.6%) endorsed two statements, 18 people (3.6%) endorsed three, 12 people (2.4%) endorsed four, and 8 people (1.6%) endorsed all five statements. 
 
-# GENDER AND MISINFORMATION BELIEFS
+# GENDER vs MISINFORMATION BELIEFS
 
 ``` {r gender vs beliefs}
 
 my_df %>%
   group_by(gender) %>%
   summarise (n = n(), M = mean (beliefs), Mdn = median (beliefs), SD = sd (beliefs))
+
+ggplot(my_df, aes(x = gender, y = beliefs, fill = gender)) +
+  geom_violin(trim = FALSE) +
+  stat_summary(fun = "median", geom = "point", color = "black", size = 3) +
+  labs(title = "Distribution of Beliefs by Gender", x = "Gender", y = "Beliefs") +
+  theme_minimal()
 
 my_df %>%
   filter(gender == "Male" | gender == "Female") %>%
@@ -178,9 +211,9 @@ my_df %>%
   )
 ```
 
-# In the sample, men (M = 0.73, SD = 1.13) had more misinformation beliefs than women (M = 0.61, SD = 1.05). However, this difference was not statistically significant, as shown by both a Welch t-test, t(494.31) = -1.20, p = 0.230, and a Wilcoxon rank-sum test, W = 29,340, p = 0.234. This suggests that gender does not play a significant role in misinformation beliefs in this sample.
+# In the sample, men (M = 0.73, SD = 1.13) have more misinformation beliefs than women (M = 0.61, SD = 1.05). However, this difference is not statistically significant, as shown by both a Welch t-test, t(494.31) = -1.20, p = 0.230, and a Wilcoxon rank-sum test, W = 29,340, p = 0.234. This suggests that gender does not play a significant role in misinformation beliefs. The violin plot visualizes this comparison, showing a largely overlapping distribution of beliefs between men and women.
 
-# AGE AND MISINFORMATION BELIEFS
+# AGE vs MISINFORMATION BELIEFS
 
 ``` {r age vs beliefs}
 
@@ -190,24 +223,106 @@ ggplot(my_df, aes(x = age, y = beliefs)) +
   theme_minimal() +
   labs(title = "Belief Scores vs. Age", x = "Age", y = "Belief Score")
 
+cor.test(my_df$beliefs, my_df$age, method = "pearson")
+
 ```
 
-# LINEAR REGRESSION - FINDING MISINFORMATION BELIEF'S ASSOCIATION WITH AGE & FACEBOOK RELIANCE
+# Younger individuals tend to have higher misinformation beliefs, as indicated by a weak but statistically significant negative correlation between age and belief scores (r = -0.24, p < 0.001). A Pearson correlation test (t(498) = -5.58, p < 0.001, 95% CI [-0.32, -0.16]) suggests that as age increases, misinformation beliefs decrease slightly.
 
-``` {r}
+# KNOWLEDGE FROM FB vs MISINFORMATION BELIEFS
 
-lm(beliefs ~ age * as.numeric(know_facebook), data = my_df) %>% summary()
+```{r}
 
-ggplot(my_df, aes(x = age, y = beliefs, color = as.factor(know_facebook))) +
-  geom_point(alpha = 0.3) +
-  geom_smooth(method = "lm", se = FALSE) +
+ggplot(my_df, aes(x = as.factor(know_facebook), y = beliefs)) +
+  geom_boxplot(outlier.shape = NA, fill = "lightblue", alpha = 0.5) +
+  geom_jitter(width = 0.2, alpha = 0.3, color = "darkblue") +
   theme_minimal() +
-  scale_color_brewer(palette = "Dark2") +
-  labs(title = "Interaction Effect of Age and Facebook Reliance on Misinformation Beliefs",
-       x = "Age",
-       y = "Misinformation Beliefs",
-       color = "Facebook Reliance")
+  labs(title = "Belief Scores by Facebook Reliance",
+       x = "Facebook Reliance (Ordinal Scale)",
+       y = "Belief Score")
+
+my_df %>%
+  group_by(know_facebook) %>%
+  summarise(mean_beliefs = mean(beliefs, na.rm = TRUE)) %>%
+  ggplot(aes(x = as.numeric(know_facebook), y = mean_beliefs)) +
+  geom_line(color = "red", size = 1) +
+  geom_point(size = 3, color = "black") +
+  theme_minimal() +
+  labs(title = "Mean Belief Scores by Facebook Reliance",
+       x = "Facebook Reliance Level",
+       y = "Mean Belief Score")
+
+cor.test(my_df$beliefs, as.numeric(my_df$know_facebook), method = "spearman")
 
 ```
+# Reliance on Facebook for coronavirus information is positively correlated with belief scores (rho = 0.23, p < 0.001), meaning those who rely more on Facebook tend to believe more misinformation statements. This correlation is also weak but statistically significant. The boxplot above shows a high concentration of 0 misinformation beliefs for those who do not get much information from Facebook, and no such concentration of values for those who do get information from Facebook. The line graph indicates a positive trend, with mean misinformation beliefs rising as Facebook reliance increases.
 
-# The regression results show that reliance on Facebook for COVID-19 information significantly predicts higher misinformation beliefs (β = 0.63, p < 0.001). However, the interaction between age and Facebook reliance is negative and significant (β = -0.0096, p = 0.005), meaning that the effect of Facebook reliance on misinformation beliefs weakens as age increases. An interaction plot illustrates this effect, showing that younger individuals who rely heavily on Facebook have the highest misinformation beliefs, while older individuals show minimal differences across reliance levels. The downward slope of the regression lines for higher Facebook reliance levels confirms that its impact diminishes with age.
+# ---------------------------------------------------------------------------------
+
+# LINEAR REGRESSION (DEPENDANT VARIABLE = MISINFORMATION BELIEFS)
+
+``` {r prepare data for model}
+
+my_model <- my_df %>%
+  mutate(
+    Female = as.numeric(gender == 'Female'),
+    High_Facebook = as.numeric(know_facebook %in% c('A fair amount', 'A great deal'))
+  )
+```
+
+# AGE
+
+```{r age-model}
+my_model %>%
+  lm(
+    beliefs ~ age,
+    data = .
+  ) %>%
+  summary
+```
+# There is a statistically significant negative relationship between age and misinformation beliefs (β=−0.016,p<0.001). The regression model, Beliefs = 1.389 − 0.016 × Age, suggests that for each additional year of age, the belief score decreases by 0.016 on average. However, the model explains only 5.89% of the variance in misinformation beliefs (R-squared = 0.0589), indicating that age alone is not a strong predictor.
+
+# GENDER
+
+```{r gender-model}
+my_model %>%
+  lm(
+    beliefs ~ Female,
+    data = .
+  ) %>%
+  summary
+```
+# There is no statistically significant relationship between gender and misinformation beliefs (β = -0.120, p = 0.221). The regression model, Beliefs = 0.727 − 0.120 × Female, indicates that when Female = 0 (i.e., men), the expected belief score is 0.727, whereas when Female = 1 (i.e., women), the expected belief score is 0.608. This suggests that women, on average, have 0.120 lower belief scores than men, but this difference is not statistically meaningful. The model explains only 0.3% of the variance in misinformation beliefs (R-squared = 0.003), indicating that gender is not a strong predictor.
+
+# FACEBOOK RELIANCE
+
+```{r facebook-model}
+my_model %>%
+  lm(
+    beliefs ~ High_Facebook,
+    data = .
+  ) %>%
+  summary
+```
+# There is a statistically significant positive relationship between high reliance on Facebook for COVID-19 information and misinformation beliefs (β = 0.711, p < 0.001). The regression model, Beliefs = 0.520 + 0.711 × High_Facebook, suggests that individuals who rely more on Facebook have, on average, 0.711 higher belief scores than those with lower reliance. However, the model explains only 6.94% of the variance in misinformation beliefs (R-squared = 0.0694), indicating that Facebook reliance alone is a weak predictor.
+
+-----------------------------------------------------------------------------------
+
+# FULL MODEL - MULTIPLE LINEAR REGRESSION
+
+```{r full-model}
+full_model <- my_model %>%
+  lm(
+    beliefs ~ age + High_Facebook + Female,
+    data = .
+  )
+
+full_model %>%
+  summary
+```
+
+# When all three predictors are included together, the model is: Beliefs = 1.219 - 0.013 × Age + 0.581 × High_Facebook - 0.168 × Female
+# Age: The negative relationship remains significant but weakens from -0.016 to -0.013. This means age is still associated with lower misinformation beliefs, but its impact slightly decreases when controlling for other factors.
+# High Facebook Reliance: The effect size decreases from 0.711 to 0.581, meaning that while high Facebook use remains a strong predictor, part of its influence may be shared with other variables, like Age.
+# Gender: The negative effect of being Female becomes slightly stronger (-0.120 to -0.168) but remains statistically insignificant (p = 0.072). This suggests that once age and Facebook reliance are accounted for, women might have even lower misinformation beliefs, but the effect is still not strong enough to be statistically significant.
+# The full model explains 10.9% of the variance in misinformation beliefs (R-squared = 0.109), which is higher than any of the individual models but still low overall.
